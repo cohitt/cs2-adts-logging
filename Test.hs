@@ -12,12 +12,23 @@ tests = testGroup "unit tests"
   [ testCase "parseMessage Info"
     ( parseMessage "I 6 Completed armadillo processing" @?=
       LogMessage Info 6 "Completed armadillo processing" )
-    -- If you don't have a function called praseMessage, change the
+    -- If you don't have a function called parseMessage, change the
     -- test to match your code.
+
+    , testCase "parseMessage Error 70"
+    ( parseMessage "E 70 3 Way too many pickles" @?=
+      LogMessage (Error 70) 3 "Way too many pickles" ) 
+    
+    , testCase "parseMessage Warning"
+    ( parseMessage "W 5 Flange is due for a checkup" @?=
+      LogMessage Warning 5 "Flange is due for a checkup" )  
+
+    , testCase "parseMessage Unknown"
+    ( parseMessage "123456789" @?=
+      Unknown "123456789" )
 
     -- Add at least 3 more test cases for 'parseMessage', including
     -- one with an error, one with a warning, and one with an Unknown
-
 
     -- We should also test the smaller parts.  Change the test below
     -- to match the code you actually wrote.
@@ -27,16 +38,60 @@ tests = testGroup "unit tests"
 
     -- Add at least 3 more tests for MessageType parsing in isolation.
 
+    , testCase "parseMessageType W"
+    ( parseMessageType "W 5 Flange is due for a checkup"
+      @?= Just Warning)
+
+    , testCase "parseMessageType E"
+    ( parseMessageType "E 70 3 Way too many pickles"
+      @?= Just (Error 70))
+
+    , testCase "parseMessageType None"
+    ( parseMessageType "123456789"
+      @?= Nothing)
+
     -- Add tests for timestamp parsing.  Think in particular about
     -- what the function does if the input doesn't start with a digit,
     -- or has some spaces followed by digits.
 
+    , testCase "parseTimeStamp I"
+    ( parseTimeStamp "I 6 Completed armadillo processing"
+      @?= Just 6)
+
+    , testCase "parseTimeStamp W"
+    ( parseTimeStamp "W 5 Flange is due for checkup"
+      @?= Just 5)
+
+    , testCase "parseTimeStamp E"
+    ( parseTimeStamp "E 70 3 Way too many pickles"
+      @?= Just 3)
+
+    , testCase "parseTimeStamp"
+    ( parseTimeStamp "123456789"
+      @?= Nothing)
+
     -- How many tests do you think is enough?  Write at least 3
     -- sentences explaining your decision.
+
+    --I think one test for each possible kind of error is enough. If my parse functions can process a single error in a
+    --certain format, they can process any error that shares that format. This is true regardless of the specific timestamp or
+    --message in any given error.
 
     -- Write at least 5 tests for 'insert', with sufficiently
     -- different inputs to test most of the cases.  Look at your code
     -- for 'insert', and any bugs you ran into while writing it.
+
+    , testCase "insert unknownMessage"
+    ( testCase (Unknown "123456789") (Leaf) 
+      @?= Leaf)
+
+    , testCase "insert leaf"
+    ( testCase (LogMessage Info 6 "Completed armadillo processing") Leaf
+      @?= Node Leaf (LogMessage Info 6 "Completed armadillo processing") Leaf)
+
+    , testCase "insert greaterTimeStamp"
+    ( testCase (LogMessage Warning 5 "Flange is due for checkup")  (Node Leaf (LogMessage (Error 70) 3 "Way too many pickles") Leaf)
+      @?= Node Leaf (LogMessage Warning 5 "Flange is due for checkup") (insert (LogMessage Warning 5 "Flange is due for checkup") Leaf))
 
     -- Next week we'll have the computer write more tests, to help us
     -- be more confident that we've tested all the tricky bits and
