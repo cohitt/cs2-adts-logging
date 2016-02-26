@@ -84,16 +84,24 @@ tests = testGroup "unit tests"
     -- for 'insert', and any bugs you ran into while writing it.
 
     , testCase "insert unknownMessage"
-    ( testCase (Unknown "123456789") (Leaf) 
+    ( insert (Unknown "123456789") Leaf
       @?= Leaf)
 
     , testCase "insert leaf"
-    ( testCase (LogMessage Info 6 "Completed armadillo processing") Leaf
+    ( insert (LogMessage Info 6 "Completed armadillo processing") Leaf
       @?= Node Leaf (LogMessage Info 6 "Completed armadillo processing") Leaf)
 
+    , testCase "insert leafError"
+    ( insert (LogMessage (Error 70) 3 "Way too many pickles") Leaf
+      @?= Node Leaf (LogMessage (Error 70) 3 "Way too many pickles") Leaf)
+
     , testCase "insert greaterTimeStamp"
-    ( testCase (LogMessage Warning 5 "Flange is due for checkup")  (Node Leaf (LogMessage (Error 70) 3 "Way too many pickles") Leaf)
-      @?= Node Leaf (LogMessage Warning 5 "Flange is due for checkup") (insert (LogMessage Warning 5 "Flange is due for checkup") Leaf))
+    ( insert (LogMessage Warning 5 "Flange is due for checkup")  (Node Leaf (LogMessage (Error 70) 3 "Way too many pickles") Leaf)
+      @?= Node Leaf (LogMessage (Error 70) 3 "Way too many pickles") (insert (LogMessage Warning 5 "Flange is due for checkup") Leaf))
+
+    , testCase "insert lowerTimeStamp"
+    ( insert (LogMessage Warning 5 "Flange is due for checkup") (Node Leaf (LogMessage Info 6 "Completed armadillo processing") Leaf)
+      @?= Node (insert (LogMessage Warning 5 "Flange is due for checkup") Leaf) (LogMessage Info 6 "Completed armadillo processing") Leaf)
 
     -- Next week we'll have the computer write more tests, to help us
     -- be more confident that we've tested all the tricky bits and
@@ -107,6 +115,16 @@ tests = testGroup "unit tests"
     -- 'insert' above.  You may even want to move them elsewhere in
     -- the file and give them names, to more easiely reuse them.
 
+    --, testCase "inOrder " 
+
+    , testCase "inOrder leaf"
+    ( inOrder Leaf
+      @?= [])
+
+    , testCase "inOrder node"
+    ( inOrder (Node Leaf (LogMessage Warning 5 "Flange is due for a checkup") Leaf)
+      @?= inOrder Leaf ++ [LogMessage Warning 5 "Flange is due for a checkup"] ++ inOrder Leaf)
+
     , testProperty "build sorted"
     (\msgList -> isSorted (inOrder (build msgList)))
 
@@ -114,14 +132,29 @@ tests = testGroup "unit tests"
     -- gives the String representation of an Int
     -- Use show to test your code to parse Ints
 
+    , testProperty "parse boolMessageType"
+    (boolMessageType)
+
     -- Write a function that takes a MessageType, and makes a String
     -- with the same format as the log file:
     -- stringMessageType :: MessageType -> String
     -- Use this to test your code that parses MessageType
+  ]
+
+stringMessageType :: MessageType -> String
+stringMessageType Info = "I"
+stringMessageType Warning = "W"
+stringMessageType (Error i) = "E" ++ (show i)
+
+boolMessageType :: MessageType -> Bool
+boolMessageType mt = (parseMessageType (stringMessageType mt))==Just mt
 
     -- Make another function that makes a String from a whole LogMessage
     -- stringLogMessage :: LogMessage -> String
     -- Use it to test parseMessage
-  ]
+
+stringLogMessage :: LogMessage -> String
+stringLogMessage (LogMessage t ts s) = show(t) ++ show(ts) ++ s
+stringLogMessage (Unknown s) = s
 
 main = defaultMain tests

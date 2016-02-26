@@ -25,8 +25,8 @@ parse s = map (parseMessage) (lines s)
 insert :: LogMessage -> MessageTree -> MessageTree
 insert (Unknown l) m = m
 insert l Leaf = Node Leaf l Leaf
-insert (LogMessage t ts s) (Node mt1 (LogMessage tn tsn sn) mt2) | ts>tsn = Node mt1 (LogMessage t ts s) (insert (LogMessage t ts s) mt2)
-insert (LogMessage t ts s) (Node mt1 (LogMessage tn tsn sn) mt2) = Node (insert (LogMessage t ts s) mt1) (LogMessage t ts s) mt2
+insert (LogMessage t ts s) (Node mt1 (LogMessage tn tsn sn) mt2) | ts>tsn = Node mt1 (LogMessage tn tsn sn) (insert (LogMessage t ts s) mt2)
+insert (LogMessage t ts s) (Node mt1 (LogMessage tn tsn sn) mt2) = Node (insert (LogMessage t ts s) mt1) (LogMessage tn tsn sn) mt2
 
 build :: [LogMessage] -> MessageTree
 build l = foldr (insert) Leaf l

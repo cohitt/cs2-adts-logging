@@ -13,11 +13,11 @@ instance Arbitrary MessageType where
   arbitrary = oneof
     [pure Info
     , pure Warning
-    , fmap Error arbitrary ]  -- An Error with an arbitrary Int
+    , fmap (Error . getNonNegative) arbitrary ]  -- An Error with an arbitrary Int
 
 -- This instance never makes Unknown messages
 instance Arbitrary LogMessage where
-  arbitrary = LogMessage <$> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = LogMessage <$> arbitrary <*> (getNonNegative <$> arbitrary) <*> (unwords . words <$> arbitrary)
 
 -- This instance always makes sorted MessageTrees
 instance Arbitrary MessageTree where
